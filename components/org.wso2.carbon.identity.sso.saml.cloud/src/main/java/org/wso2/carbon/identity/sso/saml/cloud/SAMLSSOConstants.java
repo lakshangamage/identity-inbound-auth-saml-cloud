@@ -47,6 +47,7 @@ public class SAMLSSOConstants {
     public static final String STATUS = "status";
     public static final String STATUS_MSG = "statusMsg";
     public static final String SSO_TOKEN_ID = "ssoTokenId";
+    public static final String SAML_SSO_TOKEN_ID = "samlssoTokenId";
     public static final String FE_SESSION_KEY = "authSession";
     public static final String AUTH_FAILURE = "authFailure";
     public static final String AUTH_FAILURE_MSG = "authFailureMsg";

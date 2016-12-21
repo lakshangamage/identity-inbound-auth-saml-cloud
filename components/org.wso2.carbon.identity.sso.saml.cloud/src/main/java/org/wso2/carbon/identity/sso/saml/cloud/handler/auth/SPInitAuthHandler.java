@@ -86,6 +86,8 @@ public class SPInitAuthHandler extends AuthHandler {
                 ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).setAuthenticatedIdPs(null);
                 ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).setTenantDomain(messageContext
                         .getTenantDomain());
+                ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).setCookies(messageContext
+                        .getRequest().getCookieMap());
                 return builder;
 
             } else { // if forceAuthn or normal flow
@@ -136,6 +138,8 @@ public class SPInitAuthHandler extends AuthHandler {
                         .getAuthenticationResult().getAuthenticatedIdPs());
                 ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).setTenantDomain(messageContext
                         .getTenantDomain());
+                ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).setCookies(messageContext
+                        .getRequest().getCookieMap());
                 return builder;
             } else { // authentication FAILURE
                 ((SAMLErrorResponse.SAMLErrorResponseBuilder) builder).setStatus(SAMLSSOConstants

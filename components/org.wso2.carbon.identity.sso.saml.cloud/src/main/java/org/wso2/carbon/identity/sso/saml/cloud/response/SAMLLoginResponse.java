@@ -48,6 +48,8 @@ import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SAMLLoginResponse extends SAMLResponse {
 
@@ -57,6 +59,7 @@ public class SAMLLoginResponse extends SAMLResponse {
     private String subject;
     private String authenticatedIdPs;
     private String tenantDomain;
+    private Map<String, Cookie> cookies;
 
     protected SAMLLoginResponse(IdentityResponseBuilder builder) {
         super(builder);
@@ -66,6 +69,7 @@ public class SAMLLoginResponse extends SAMLResponse {
         this.authenticatedIdPs = ((SAMLLoginResponseBuilder) builder).authenticatedIdPs;
         this.tenantDomain = ((SAMLLoginResponseBuilder) builder).tenantDomain;
         this.subject = ((SAMLLoginResponseBuilder) builder).subject;
+        this.cookies = ((SAMLLoginResponseBuilder) builder).cookies;
     }
 
     public String getRespString() {
@@ -96,6 +100,10 @@ public class SAMLLoginResponse extends SAMLResponse {
         return (SAMLMessageContext)this.context;
     }
 
+    public Map<String, Cookie> getCookies() {
+        return cookies;
+    }
+
     public static class SAMLLoginResponseBuilder extends SAMLResponseBuilder {
 
         private static Log log = LogFactory.getLog(SAMLLoginResponseBuilder.class);
@@ -106,6 +114,7 @@ public class SAMLLoginResponse extends SAMLResponse {
         private String subject;
         private String authenticatedIdPs;
         private String tenantDomain;
+        private Map<String, Cookie> cookies;
 
         public SAMLLoginResponseBuilder(IdentityMessageContext context) {
             super(context);
@@ -161,7 +170,7 @@ public class SAMLLoginResponse extends SAMLResponse {
             this.setResponse(response);
             String respString = SAMLSSOUtil.encode(SAMLSSOUtil.marshall(response));
             this.setRespString(respString);
-            storeTokenIdCookie(sessionId, response, messageContext.getTenantDomain());
+            storeTokenIdCookie(sessionId, messageContext.getTenantDomain());
             return respString;
         }
 
@@ -193,6 +202,10 @@ public class SAMLLoginResponse extends SAMLResponse {
         public SAMLLoginResponseBuilder setTenantDomain(String tenantDomain) {
             this.tenantDomain = tenantDomain;
             return this;
+        }
+
+        public void setCookies(Map<String, Cookie> cookies) {
+            this.cookies = cookies;
         }
 
         private Status buildStatus(String status, String statMsg) {
@@ -243,7 +256,7 @@ public class SAMLLoginResponse extends SAMLResponse {
             Cookie[] cookies = messageContext.getRequest().getCookies();
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
-                    if (StringUtils.equals(cookie.getName(), SAMLSSOConstants.SSO_TOKEN_ID)) {
+                    if (StringUtils.equals(cookie.getName(), SAMLSSOConstants.SAML_SSO_TOKEN_ID)) {
                         return cookie;
                     }
                 }
@@ -253,15 +266,14 @@ public class SAMLLoginResponse extends SAMLResponse {
 
         /**
          * @param sessionId
-         * @param resp
          */
-        private void storeTokenIdCookie(String sessionId,HttpServletResponse resp,
+        private void storeTokenIdCookie(String sessionId,
                                         String tenantDomain) {
-            Cookie samlssoTokenIdCookie = new Cookie("samlssoTokenId", sessionId);
+            Cookie samlssoTokenIdCookie = new Cookie(SAMLSSOConstants.SAML_SSO_TOKEN_ID, sessionId);
             samlssoTokenIdCookie.setMaxAge(IdPManagementUtil.getIdleSessionTimeOut(tenantDomain)*60);
             samlssoTokenIdCookie.setSecure(true);
             samlssoTokenIdCookie.setHttpOnly(true);
-            resp.addCookie(samlssoTokenIdCookie);
+            context.getRequest().getCookieMap().put(SAMLSSOConstants.SAML_SSO_TOKEN_ID, samlssoTokenIdCookie);
         }
     }
 }

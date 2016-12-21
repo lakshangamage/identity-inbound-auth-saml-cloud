@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.SAMLSSOConstants;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdentityRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdpInitRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
+import org.wso2.carbon.identity.sso.saml.cloud.request.SingleLogoutRequest;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.io.Serializable;
@@ -61,6 +62,11 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
      * Should be set in validate logout request.
      */
     private boolean isLogoutRequest;
+    private boolean isDoSignResponse;
+    private String signingAlgorithmUri;
+    private String digestAlgorithmUri;
+    private SingleLogoutRequest[] logoutRequests;
+    private String logoutResponse;
 
     public SAMLMessageContext(SAMLIdentityRequest request, Map<T1, T2> parameters) {
         super(request, parameters);
@@ -204,5 +210,49 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
 
     public void setLogoutRequest(boolean logoutRequest) {
         isLogoutRequest = logoutRequest;
+    }
+
+    public boolean isDoSignResponse() {
+        return isDoSignResponse;
+    }
+
+    public void setDoSignResponse(boolean doSignResponse) {
+        isDoSignResponse = doSignResponse;
+    }
+
+    public String getSigningAlgorithmUri() {
+        return signingAlgorithmUri;
+    }
+
+    public void setSigningAlgorithmUri(String signingAlgorithmUri) {
+        this.signingAlgorithmUri = signingAlgorithmUri;
+    }
+
+    public String getDigestAlgorithmUri() {
+        return digestAlgorithmUri;
+    }
+
+    public void setDigestAlgorithmUri(String digestAlgorithmUri) {
+        this.digestAlgorithmUri = digestAlgorithmUri;
+    }
+
+    public SingleLogoutRequest[] getLogoutRequests() {
+        return logoutRequests;
+    }
+
+    public void setLogoutRequests(SingleLogoutRequest[] logoutRequests) {
+        if (logoutRequests == null) {
+            this.logoutRequests = new SingleLogoutRequest[0];
+        } else {
+            this.logoutRequests = logoutRequests.clone();
+        }
+    }
+
+    public String getLogoutResponse() {
+        return logoutResponse;
+    }
+
+    public void setLogoutResponse(String logoutResponse) {
+        this.logoutResponse = logoutResponse;
     }
 }

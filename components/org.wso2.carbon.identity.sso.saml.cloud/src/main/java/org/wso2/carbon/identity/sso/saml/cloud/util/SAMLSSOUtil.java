@@ -50,6 +50,7 @@ import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
 import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
+import org.opensaml.xml.security.SecurityException;
 import org.opensaml.xml.security.x509.X509Credential;
 import org.opensaml.xml.signature.SignableXMLObject;
 import org.opensaml.xml.util.Base64;
@@ -63,6 +64,7 @@ import org.w3c.dom.ls.LSOutput;
 import org.w3c.dom.ls.LSSerializer;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
@@ -86,6 +88,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.builders.X509CredentialImpl;
 import org.wso2.carbon.identity.sso.saml.cloud.builders.assertion.DefaultSAMLAssertionBuilder;
 import org.wso2.carbon.identity.sso.saml.cloud.builders.encryption.SSOEncrypter;
 import org.wso2.carbon.identity.sso.saml.cloud.builders.signature.SSOSigner;
+import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdentityRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SAML2HTTPRedirectSignatureValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SSOAuthnRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
@@ -635,6 +638,118 @@ public class SAMLSSOUtil {
         }
     }
 
+    /**
+     * Validates the signature of the LogoutRequest message.
+     * @param logoutRequest
+     * @param alias
+     * @param subject
+     * @param request
+     * @return
+     * @throws IdentityException
+     */
+    public static boolean validateLogoutRequestSignature(LogoutRequest logoutRequest, String alias,
+                                                         String subject, SAMLIdentityRequest request) throws IdentityException {
+
+        String domainName = getTenantDomainFromThreadLocal();
+        if (request != null) {
+            return validateDeflateSignature(request, logoutRequest.getIssuer().getValue(), alias, domainName);
+        } else {
+            return validateXMLSignature(logoutRequest, alias, domainName);
+        }
+    }
+
+    /**
+     * Signature validation for HTTP Redirect Binding
+     * @param request
+     * @param issuer
+     * @param alias
+     * @param domainName
+     * @return
+     * @throws IdentityException
+     */
+    public static boolean validateDeflateSignature(SAMLIdentityRequest request, String issuer,
+                                                   String alias, String domainName) throws IdentityException {
+        try {
+
+            synchronized (Runtime.getRuntime().getClass()) {
+                samlHTTPRedirectSignatureValidator = (SAML2HTTPRedirectSignatureValidator) Class.forName(IdentityUtil.getProperty(
+                        "SSOService.SAML2HTTPRedirectSignatureValidator").trim()).newInstance();
+                samlHTTPRedirectSignatureValidator.init();
+            }
+
+            return samlHTTPRedirectSignatureValidator.validateSignature((SAMLSpInitRequest) request, issuer,
+                    alias, domainName);
+
+        } catch (SecurityException e) {
+            log.error("Error validating deflate signature", e);
+            return false;
+        } catch (IdentitySAML2SSOException e) {
+            log.warn("Signature validation failed for the SAML Message : Failed to construct the X509CredentialImpl for the alias " +
+                    alias, e);
+            return false;
+        } catch (ClassNotFoundException e) {
+            throw IdentityException.error("Class not found: "
+                    + IdentityUtil.getProperty("SSOService.SAML2HTTPRedirectSignatureValidator"), e);
+        } catch (InstantiationException e) {
+            throw IdentityException.error("Error while instantiating class: "
+                    + IdentityUtil.getProperty("SSOService.SAML2HTTPRedirectSignatureValidator"), e);
+        } catch (IllegalAccessException e) {
+            throw IdentityException.error("Illegal access to class: "
+                    + IdentityUtil.getProperty("SSOService.SAML2HTTPRedirectSignatureValidator"), e);
+        }
+    }
+
+    /**
+     * Validate the signature of an assertion
+     *
+     * @param request    SAML Assertion, this could be either a SAML Request or a
+     *                   LogoutRequest
+     * @param alias      Certificate alias against which the signature is validated.
+     * @param domainName domain name of the subject
+     * @return true, if the signature is valid.
+     */
+    public static boolean validateXMLSignature(RequestAbstractType request, String alias,
+                                               String domainName) throws IdentityException {
+
+        boolean isSignatureValid = false;
+
+        if (request.getSignature() != null) {
+            try {
+                X509Credential cred = SAMLSSOUtil.getX509CredentialImplForTenant(domainName, alias);
+
+                synchronized (Runtime.getRuntime().getClass()) {
+                    ssoSigner = (SSOSigner) Class.forName(IdentityUtil.getProperty(
+                            "SSOService.SAMLSSOSigner").trim()).newInstance();
+                    ssoSigner.init();
+                }
+
+                return ssoSigner.validateXMLSignature(request, cred, alias);
+            } catch (IdentitySAML2SSOException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Signature validation failed for the SAML Message : Failed to construct the X509CredentialImpl for the alias " +
+                            alias, e);
+                }
+            } catch (IdentityException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Signature Validation Failed for the SAML Assertion : Signature is invalid.", e);
+                }
+            } catch (ClassNotFoundException e) {
+                throw IdentityException.error("Class not found: "
+                        + IdentityUtil.getProperty("SSOService.SAMLSSOSigner"), e);
+            } catch (InstantiationException e) {
+                throw IdentityException.error("Error while instantiating class: "
+                        + IdentityUtil.getProperty("SSOService.SAMLSSOSigner"), e);
+            } catch (IllegalAccessException e) {
+                throw IdentityException.error("Illegal access to class: "
+                        + IdentityUtil.getProperty("SSOService.SAMLSSOSigner"), e);
+            } catch (Exception e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Error while validating XML signature.", e);
+                }
+            }
+        }
+        return isSignatureValid;
+    }
     public static String validateTenantDomain(String tenantDomain) throws UserStoreException, IdentityException {
 
         if (tenantDomain != null && !tenantDomain.trim().isEmpty() && !"null".equalsIgnoreCase(tenantDomain.trim())) {

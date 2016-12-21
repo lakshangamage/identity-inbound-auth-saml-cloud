@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.internal.IdentitySAMLSSOServiceCo
 import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -86,6 +87,10 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
             builder.setBody(getRedirectHtml(acUrl, relayState, authenticatedIdPs, loginResponse));
         } else {
             builder.setBody(getPostHtml(acUrl, relayState, authenticatedIdPs, loginResponse));
+        }
+        Cookie samlssoSessionIdCookie = loginResponse.getCookies().get(SAMLSSOConstants.SAML_SSO_TOKEN_ID);
+        if (samlssoSessionIdCookie != null) {
+            builder.addCookie(samlssoSessionIdCookie);
         }
         builder.setStatusCode(HttpServletResponse.SC_OK);
         return builder;
