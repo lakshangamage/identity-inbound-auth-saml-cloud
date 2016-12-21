@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.sso.saml.cloud.response;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -39,7 +40,14 @@ import org.wso2.carbon.identity.core.model.SAMLSSOServiceProviderDO;
 import org.wso2.carbon.identity.sso.saml.cloud.SAMLSSOConstants;
 import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
 import org.wso2.carbon.identity.sso.saml.cloud.builders.SignKeyDataHolder;
+import org.wso2.carbon.identity.sso.saml.cloud.session.SSOSessionPersistenceManager;
 import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
+import org.wso2.carbon.idp.mgt.util.IdPManagementUtil;
+import org.wso2.carbon.registry.core.utils.UUIDGenerator;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class SAMLLoginResponse extends SAMLResponse {
 
@@ -126,9 +134,11 @@ public class SAMLLoginResponse extends SAMLResponse {
             DateTime notOnOrAfter = new DateTime(issueInstant.getMillis()
                     + SAMLSSOUtil.getSAMLResponseValidityPeriod() * 60 * 1000L);
             response.setIssueInstant(issueInstant);
+
             //@TODO sessionHandling
-            String sessionId = "";
-            Assertion assertion = SAMLSSOUtil.buildSAMLAssertion(messageContext, notOnOrAfter, sessionId);
+            String sessionId = getSessionId();
+            String sessionIndexId = getSessionIndexId(sessionId);
+            Assertion assertion = SAMLSSOUtil.buildSAMLAssertion(messageContext, notOnOrAfter, sessionIndexId);
 
             if (serviceProviderDO.isDoEnableEncryptedAssertion()) {
 
@@ -151,6 +161,7 @@ public class SAMLLoginResponse extends SAMLResponse {
             this.setResponse(response);
             String respString = SAMLSSOUtil.encode(SAMLSSOUtil.marshall(response));
             this.setRespString(respString);
+            storeTokenIdCookie(sessionId, response, messageContext.getTenantDomain());
             return respString;
         }
 
@@ -201,6 +212,56 @@ public class SAMLLoginResponse extends SAMLResponse {
             }
 
             return stat;
+        }
+
+        private String getSessionId() {
+
+            String sessionId = null;
+            Cookie ssoTokenIdCookie = getTokenIdCookie((SAMLMessageContext) this.context);
+            if (ssoTokenIdCookie != null) {
+                sessionId = ssoTokenIdCookie.getValue();
+            }
+            if (sessionId == null) {
+                sessionId = UUIDGenerator.generateUUID();
+            }
+            return sessionId;
+        }
+        private String getSessionIndexId(String sessionId){
+
+            String sessionIndexId ;
+            SSOSessionPersistenceManager sessionPersistenceManager = SSOSessionPersistenceManager.getPersistenceManager();
+            if (sessionPersistenceManager.isExistingTokenId(sessionId)) {
+                sessionIndexId = sessionPersistenceManager.getSessionIndexFromTokenId(sessionId);
+            } else {
+                sessionIndexId = UUIDGenerator.generateUUID();
+                sessionPersistenceManager.persistSession(sessionId, sessionIndexId);
+            }
+            return sessionIndexId;
+        }
+
+        private Cookie getTokenIdCookie(SAMLMessageContext messageContext) {
+            Cookie[] cookies = messageContext.getRequest().getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (StringUtils.equals(cookie.getName(), SAMLSSOConstants.SSO_TOKEN_ID)) {
+                        return cookie;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * @param sessionId
+         * @param resp
+         */
+        private void storeTokenIdCookie(String sessionId,HttpServletResponse resp,
+                                        String tenantDomain) {
+            Cookie samlssoTokenIdCookie = new Cookie("samlssoTokenId", sessionId);
+            samlssoTokenIdCookie.setMaxAge(IdPManagementUtil.getIdleSessionTimeOut(tenantDomain)*60);
+            samlssoTokenIdCookie.setSecure(true);
+            samlssoTokenIdCookie.setHttpOnly(true);
+            resp.addCookie(samlssoTokenIdCookie);
         }
     }
 }

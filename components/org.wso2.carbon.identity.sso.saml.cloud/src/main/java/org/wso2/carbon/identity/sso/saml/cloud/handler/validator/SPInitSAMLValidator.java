@@ -20,11 +20,14 @@ package org.wso2.carbon.identity.sso.saml.cloud.handler.validator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.LogoutRequest;
 import org.opensaml.xml.XMLObject;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
+import org.wso2.carbon.identity.sso.saml.cloud.validators.SLOAuthnRequestValidator;
+import org.wso2.carbon.identity.sso.saml.cloud.validators.SPInitLogoutRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SPInitSSOAuthnRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SSOAuthnRequestValidator;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -65,6 +68,9 @@ public class SPInitSAMLValidator extends SAMLValidator {
             }
             SSOAuthnRequestValidator reqValidator = new SPInitSSOAuthnRequestValidator(messageContext);
             return reqValidator.validate((AuthnRequest)request);
+        } else if (request instanceof LogoutRequest) {
+            SLOAuthnRequestValidator reqValidator = new SPInitLogoutRequestValidator(messageContext);
+            return reqValidator.validate((LogoutRequest)request);
         }
         return false;
     }

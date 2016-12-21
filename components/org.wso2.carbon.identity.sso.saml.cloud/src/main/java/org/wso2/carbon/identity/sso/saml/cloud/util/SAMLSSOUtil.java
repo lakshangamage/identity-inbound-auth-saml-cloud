@@ -32,6 +32,8 @@ import org.opensaml.common.impl.SecureRandomIdentifierGenerator;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml2.core.Issuer;
+import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.saml2.core.LogoutResponse;
 import org.opensaml.saml2.core.RequestAbstractType;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Status;
@@ -845,6 +847,22 @@ public class SAMLSSOUtil {
     }
 
     /**
+     *  Sign SAML Logout Request message
+     *
+     * @param request
+     * @param signatureAlgorithm
+     * @param digestAlgorithm
+     * @param cred
+     * @return
+     * @throws IdentityException
+     */
+    public static LogoutRequest setSignature(LogoutRequest request, String signatureAlgorithm, String
+            digestAlgorithm, X509Credential cred) throws IdentityException {
+
+        return (LogoutRequest) doSetSignature(request, signatureAlgorithm, digestAlgorithm, cred);
+    }
+
+    /**
      * Sign the SAML Response message
      *
      * @param response
@@ -858,6 +876,22 @@ public class SAMLSSOUtil {
                                         X509Credential cred) throws IdentityException {
 
         return (Response) doSetSignature(response, signatureAlgorithm, digestAlgorithm, cred);
+    }
+
+    /**
+     * Sign the SAML LogoutResponse message
+     *
+     * @param response
+     * @param signatureAlgorithm
+     * @param digestAlgorithm
+     * @param cred
+     * @return
+     * @throws IdentityException
+     */
+    public static LogoutResponse setSignature(LogoutResponse response, String signatureAlgorithm, String
+            digestAlgorithm, X509Credential cred) throws IdentityException {
+
+        return (LogoutResponse) doSetSignature(response, signatureAlgorithm, digestAlgorithm, cred);
     }
 
     /**
