@@ -40,38 +40,29 @@ public class SPInitSAMLValidator extends SAMLValidator {
 
     @Override
     public boolean canHandle(SAMLMessageContext messageContext) {
-        if (messageContext.getRequest() instanceof SAMLSpInitRequest) {
+        if (messageContext.isAuthnRequest()) {
             return true;
         }
         return false;
     }
 
     public boolean validateRequest(SAMLMessageContext messageContext) throws IdentityException, IOException {
-        SAMLSpInitRequest identityRequest = (SAMLSpInitRequest)messageContext.getRequest();
-        String decodedRequest;
-        if (identityRequest.isRedirect()) {
-            decodedRequest = SAMLSSOUtil.decode(identityRequest.getSamlRequest());
-        } else {
-            decodedRequest = SAMLSSOUtil.decodeForPost(identityRequest.getSamlRequest());
+
+        XMLObject request = SAMLSSOUtil.unmarshall(messageContext.getDecodedRequest());
+        messageContext.setDestination(((AuthnRequest) request).getDestination());
+        messageContext.setId(((AuthnRequest) request).getID());
+        messageContext.setAssertionConsumerUrl(((AuthnRequest) request).getAssertionConsumerServiceURL());
+        messageContext.setIsPassive(((AuthnRequest) request).isPassive());
+        messageContext.setTenantDomain(messageContext.getRequest().getTenantDomain());
+        try {
+            SAMLSSOUtil.setTenantDomainInThreadLocal(messageContext.getRequest().getTenantDomain());
+        } catch (UserStoreException e) {
+            log.error("Error occurred while setting tenant domain to thread local.");
         }
-        XMLObject request = SAMLSSOUtil.unmarshall(decodedRequest);
-        if (request instanceof AuthnRequest) {
-            messageContext.setDestination(((AuthnRequest) request).getDestination());
-            messageContext.setId(((AuthnRequest) request).getID());
-            messageContext.setAssertionConsumerUrl(((AuthnRequest) request).getAssertionConsumerServiceURL());
-            messageContext.setIsPassive(((AuthnRequest) request).isPassive());
-            messageContext.setTenantDomain(messageContext.getRequest().getTenantDomain());
-            try {
-                SAMLSSOUtil.setTenantDomainInThreadLocal(messageContext.getRequest().getTenantDomain());
-            } catch (UserStoreException e) {
-                log.error("Error occurred while setting tenant domain to thread local.");
-            }
-            SSOAuthnRequestValidator reqValidator = new SPInitSSOAuthnRequestValidator(messageContext);
-            return reqValidator.validate((AuthnRequest)request);
-        } else if (request instanceof LogoutRequest) {
-            SLOAuthnRequestValidator reqValidator = new SPInitLogoutRequestValidator(messageContext);
-            return reqValidator.validate((LogoutRequest)request);
-        }
-        return false;
+        SSOAuthnRequestValidator reqValidator = new SPInitSSOAuthnRequestValidator(messageContext);
+        return reqValidator.validate((AuthnRequest)request);
+//            SLOAuthnRequestValidator reqValidator = new SPInitLogoutRequestValidator(messageContext);
+//            return reqValidator.validate((LogoutRequest)request);
+
     }
 }

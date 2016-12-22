@@ -18,17 +18,28 @@
 package org.wso2.carbon.identity.sso.saml.cloud.processor;
 
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.LogoutRequest;
+import org.opensaml.xml.XMLObject;
 import org.wso2.carbon.identity.application.authentication.framework.exception.FrameworkException;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.FrameworkLoginResponse;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityRequest;
+import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.HandlerManager;
+import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SPInitSAMLValidator;
+import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdentityRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
+import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
+import org.wso2.carbon.user.api.UserStoreException;
 
 import java.util.HashMap;
 
 public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
 
+    private static final Log log = LogFactory.getLog(SPInitSAMLValidator.class);
     private String relyingParty;
 
     @Override
@@ -40,7 +51,29 @@ public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
     public boolean canHandle(IdentityRequest identityRequest) {
         if (identityRequest instanceof SAMLSpInitRequest && ((SAMLSpInitRequest) identityRequest).getSamlRequest
                 () != null) {
-            return true;
+            SAMLMessageContext messageContext = new SAMLMessageContext((SAMLSpInitRequest) identityRequest, new
+                    HashMap<String, String>());
+            SAMLSpInitRequest samlIdentityRequest = (SAMLSpInitRequest)messageContext.getRequest();
+            String decodedRequest;
+            try {
+                if (samlIdentityRequest.isRedirect()) {
+                    decodedRequest = SAMLSSOUtil.decode(samlIdentityRequest.getSamlRequest());
+                } else {
+                    decodedRequest = SAMLSSOUtil.decodeForPost(samlIdentityRequest.getSamlRequest());
+                }
+                messageContext.setDecodedRequest(decodedRequest);
+                XMLObject request = SAMLSSOUtil.unmarshall(decodedRequest);
+
+                if (request instanceof AuthnRequest) {
+                    messageContext.setAuthnRequest(true);
+                    return true;
+                } else if (request instanceof LogoutRequest) {
+                    messageContext.setLogoutRequest(true);
+                    return false;
+                }
+            } catch (IdentityException e) {
+                log.error("Error occurred while unmarshalling SAML Request");
+            }
         }
         return false;
     }

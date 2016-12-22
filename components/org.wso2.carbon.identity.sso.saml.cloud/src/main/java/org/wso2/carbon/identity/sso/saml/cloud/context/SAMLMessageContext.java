@@ -43,6 +43,9 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     private String id;
     private String assertionConsumerUrl;
     private boolean isPassive;
+    private boolean isLogoutRequest;
+    private boolean isAuthnRequest;
+    private String decodedRequest;
 
     /**
      * Should be set in validateAuthnRequest
@@ -61,7 +64,8 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     /*
      * Should be set in validate logout request.
      */
-    private boolean isLogoutRequest;
+    private String sessionId;
+    private String sessionIndexId;
     private boolean isDoSignResponse;
     private String signingAlgorithmUri;
     private String digestAlgorithmUri;
@@ -212,6 +216,14 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
         isLogoutRequest = logoutRequest;
     }
 
+    public boolean isAuthnRequest() {
+        return isAuthnRequest;
+    }
+
+    public void setAuthnRequest(boolean authnRequest) {
+        isAuthnRequest = authnRequest;
+    }
+
     public boolean isDoSignResponse() {
         return isDoSignResponse;
     }
@@ -254,5 +266,29 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
 
     public void setLogoutResponse(String logoutResponse) {
         this.logoutResponse = logoutResponse;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public String getSessionIndexId() {
+        return sessionIndexId;
+    }
+
+    public void setSessionIndexId(String sessionIndexId) {
+        this.sessionIndexId = sessionIndexId;
+    }
+
+    public String getDecodedRequest() {
+        return decodedRequest;
+    }
+
+    public void setDecodedRequest(String decodedRequest) {
+        this.decodedRequest = decodedRequest;
     }
 }

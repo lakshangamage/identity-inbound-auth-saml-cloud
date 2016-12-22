@@ -36,6 +36,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.response.SAMLErrorResponse;
 import org.wso2.carbon.identity.sso.saml.cloud.response.SAMLLoginResponse;
 import org.wso2.carbon.identity.sso.saml.cloud.response.SAMLResponse;
+import org.wso2.carbon.identity.sso.saml.cloud.session.SSOSessionPersistenceManager;
 import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SAML2HTTPRedirectDeflateSignatureValidator;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -225,6 +226,16 @@ public class SPInitAuthHandler extends AuthHandler {
         if (isAuthenticated) {
             builder = new SAMLLoginResponse.SAMLLoginResponseBuilder(messageContext);
             String respString = ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).buildResponse();
+
+            SSOSessionPersistenceManager sessionPersistenceManager = SSOSessionPersistenceManager.getPersistenceManager();
+            if (authMode.equals(SAMLSSOConstants.AuthnModes.USERNAME_PASSWORD)) {
+                SAMLSSOServiceProviderDO spDO = messageContext.getSamlssoServiceProviderDO();
+                sessionPersistenceManager.persistSession(messageContext.getSessionIndexId(),
+                        messageContext.getUser().getAuthenticatedSubjectIdentifier(),
+                        spDO, messageContext.getRpSessionId(),
+                        messageContext.getIssuer(),
+                        messageContext.getAssertionConsumerURL());
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug("Authentication successfully processed. The SAMLResponse is :" + respString);

@@ -237,6 +237,7 @@ public class SAMLLoginResponse extends SAMLResponse {
             if (sessionId == null) {
                 sessionId = UUIDGenerator.generateUUID();
             }
+            ((SAMLMessageContext) this.context).setSessionIndexId(sessionId);
             return sessionId;
         }
         private String getSessionIndexId(String sessionId){
@@ -249,6 +250,7 @@ public class SAMLLoginResponse extends SAMLResponse {
                 sessionIndexId = UUIDGenerator.generateUUID();
                 sessionPersistenceManager.persistSession(sessionId, sessionIndexId);
             }
+            ((SAMLMessageContext) this.context).setSessionIndexId(sessionIndexId);
             return sessionIndexId;
         }
 
