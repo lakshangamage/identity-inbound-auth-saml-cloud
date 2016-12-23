@@ -56,6 +56,7 @@ public class SSOLoginProcessor extends IdentityProcessor {
         if (context != null) {
             if (context.getRequest() instanceof SAMLSpInitRequest || context.getRequest() instanceof
                     SAMLIdpInitRequest) {
+                //TODO modify to avoid contradictions
                 return true;
             }
         }

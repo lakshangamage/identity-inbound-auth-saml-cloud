@@ -39,8 +39,9 @@ import java.util.HashMap;
 
 public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
 
-    private static final Log log = LogFactory.getLog(SPInitSAMLValidator.class);
+    private static final Log log = LogFactory.getLog(SPInitSSOAuthnRequestProcessor.class);
     private String relyingParty;
+    private SAMLMessageContext messageContext;
 
     @Override
     public int getPriority() {
@@ -51,10 +52,11 @@ public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
     public boolean canHandle(IdentityRequest identityRequest) {
         if (identityRequest instanceof SAMLSpInitRequest && ((SAMLSpInitRequest) identityRequest).getSamlRequest
                 () != null) {
-            SAMLMessageContext messageContext = new SAMLMessageContext((SAMLSpInitRequest) identityRequest, new
+            messageContext = new SAMLMessageContext((SAMLSpInitRequest) identityRequest, new
                     HashMap<String, String>());
-            SAMLSpInitRequest samlIdentityRequest = (SAMLSpInitRequest)messageContext.getRequest();
+            SAMLSpInitRequest samlIdentityRequest = (SAMLSpInitRequest)identityRequest;
             String decodedRequest;
+
             try {
                 if (samlIdentityRequest.isRedirect()) {
                     decodedRequest = SAMLSSOUtil.decode(samlIdentityRequest.getSamlRequest());
@@ -67,9 +69,6 @@ public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
                 if (request instanceof AuthnRequest) {
                     messageContext.setAuthnRequest(true);
                     return true;
-                } else if (request instanceof LogoutRequest) {
-                    messageContext.setLogoutRequest(true);
-                    return false;
                 }
             } catch (IdentityException e) {
                 log.error("Error occurred while unmarshalling SAML Request");
@@ -81,8 +80,10 @@ public class SPInitSSOAuthnRequestProcessor extends AuthnRequestProcessor {
     @Override
     public FrameworkLoginResponse.FrameworkLoginResponseBuilder process(IdentityRequest identityRequest) throws
             FrameworkException {
-        SAMLMessageContext messageContext = new SAMLMessageContext((SAMLSpInitRequest) identityRequest, new
-                HashMap<String, String>());
+        if (messageContext == null) {
+            messageContext = new SAMLMessageContext((SAMLSpInitRequest) identityRequest, new
+                    HashMap<String, String>());
+        }
         HandlerManager.getInstance().validateRequest(messageContext);
         return buildResponseForFrameworkLogin(messageContext);
     }

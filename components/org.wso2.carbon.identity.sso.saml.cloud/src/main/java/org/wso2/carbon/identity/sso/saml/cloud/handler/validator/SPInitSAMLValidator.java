@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.util.SAMLSSOUtil;
-import org.wso2.carbon.identity.sso.saml.cloud.validators.SLOAuthnRequestValidator;
+import org.wso2.carbon.identity.sso.saml.cloud.validators.SLOLogoutRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SPInitLogoutRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SPInitSSOAuthnRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SSOAuthnRequestValidator;
@@ -40,7 +40,7 @@ public class SPInitSAMLValidator extends SAMLValidator {
 
     @Override
     public boolean canHandle(SAMLMessageContext messageContext) {
-        if (messageContext.isAuthnRequest()) {
+        if (messageContext.getRequest() instanceof SAMLSpInitRequest) {
             return true;
         }
         return false;
@@ -49,20 +49,23 @@ public class SPInitSAMLValidator extends SAMLValidator {
     public boolean validateRequest(SAMLMessageContext messageContext) throws IdentityException, IOException {
 
         XMLObject request = SAMLSSOUtil.unmarshall(messageContext.getDecodedRequest());
-        messageContext.setDestination(((AuthnRequest) request).getDestination());
-        messageContext.setId(((AuthnRequest) request).getID());
-        messageContext.setAssertionConsumerUrl(((AuthnRequest) request).getAssertionConsumerServiceURL());
-        messageContext.setIsPassive(((AuthnRequest) request).isPassive());
-        messageContext.setTenantDomain(messageContext.getRequest().getTenantDomain());
-        try {
-            SAMLSSOUtil.setTenantDomainInThreadLocal(messageContext.getRequest().getTenantDomain());
-        } catch (UserStoreException e) {
-            log.error("Error occurred while setting tenant domain to thread local.");
+        if (request instanceof AuthnRequest) {
+            messageContext.setDestination(((AuthnRequest) request).getDestination());
+            messageContext.setId(((AuthnRequest) request).getID());
+            messageContext.setAssertionConsumerUrl(((AuthnRequest) request).getAssertionConsumerServiceURL());
+            messageContext.setIsPassive(((AuthnRequest) request).isPassive());
+            messageContext.setTenantDomain(messageContext.getRequest().getTenantDomain());
+            try {
+                SAMLSSOUtil.setTenantDomainInThreadLocal(messageContext.getRequest().getTenantDomain());
+            } catch (UserStoreException e) {
+                log.error("Error occurred while setting tenant domain to thread local.");
+            }
+            SSOAuthnRequestValidator reqValidator = new SPInitSSOAuthnRequestValidator(messageContext);
+            return reqValidator.validate((AuthnRequest)request);
+        } else if (request instanceof LogoutRequest) {
+            SLOLogoutRequestValidator reqValidator = new SPInitLogoutRequestValidator(messageContext);
+            return reqValidator.validate((LogoutRequest)request);
         }
-        SSOAuthnRequestValidator reqValidator = new SPInitSSOAuthnRequestValidator(messageContext);
-        return reqValidator.validate((AuthnRequest)request);
-//            SLOAuthnRequestValidator reqValidator = new SPInitLogoutRequestValidator(messageContext);
-//            return reqValidator.validate((LogoutRequest)request);
-
+        return false;
     }
 }

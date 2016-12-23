@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SPInitLogoutRequestValidator implements SLOAuthnRequestValidator{
+public class SPInitLogoutRequestValidator implements SLOLogoutRequestValidator {
 
     private static Log log = LogFactory.getLog(SPInitLogoutRequestValidator.class);
     private SAMLMessageContext messageContext;

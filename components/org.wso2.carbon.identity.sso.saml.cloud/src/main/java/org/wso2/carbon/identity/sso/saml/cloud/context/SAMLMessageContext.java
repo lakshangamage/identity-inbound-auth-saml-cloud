@@ -43,8 +43,6 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     private String id;
     private String assertionConsumerUrl;
     private boolean isPassive;
-    private boolean isLogoutRequest;
-    private boolean isAuthnRequest;
     private String decodedRequest;
 
     /**
@@ -69,6 +67,8 @@ public class SAMLMessageContext<T1 extends Serializable, T2 extends Serializable
     private boolean isDoSignResponse;
     private String signingAlgorithmUri;
     private String digestAlgorithmUri;
+    private boolean isLogoutRequest;
+    private boolean isAuthnRequest;
     private SingleLogoutRequest[] logoutRequests;
     private String logoutResponse;
 

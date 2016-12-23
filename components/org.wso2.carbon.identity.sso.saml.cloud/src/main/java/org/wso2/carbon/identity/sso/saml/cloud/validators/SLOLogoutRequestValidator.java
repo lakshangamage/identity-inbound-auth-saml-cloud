@@ -5,9 +5,6 @@ import org.wso2.carbon.identity.base.IdentityException;
 
 import java.io.IOException;
 
-/**
- * Created by lakshan on 12/15/16.
- */
-public interface SLOAuthnRequestValidator {
+public interface SLOLogoutRequestValidator {
     boolean validate(LogoutRequest request) throws IdentityException, IOException;
 }

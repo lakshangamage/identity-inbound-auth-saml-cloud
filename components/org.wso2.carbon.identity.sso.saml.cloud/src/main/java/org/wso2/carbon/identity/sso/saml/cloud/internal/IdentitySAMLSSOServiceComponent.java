@@ -43,6 +43,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.IDPInitSAMLVali
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SAMLValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SPInitSAMLValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.processor.IDPInitAuthnRequestProcessor;
+import org.wso2.carbon.identity.sso.saml.cloud.processor.SPInitSLORequestProcessor;
 import org.wso2.carbon.identity.sso.saml.cloud.processor.SSOLoginProcessor;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdentityRequestFactory;
 import org.wso2.carbon.identity.sso.saml.cloud.response.HttpSAMLResponseFactory;
@@ -80,6 +81,9 @@ import java.util.Scanner;
  * @scr.reference name="saml.processor.request"
  * interface="SPInitSSOAuthnRequestProcessor" cardinality="0..n"
  * policy="dynamic" bind="addAuthnRequestProcessor" unbind="removeAuthnRequestProcessor"
+ * @scr.reference name="saml.processor.logout.request"
+ * interface="SPInitSLORequestProcessor" cardinality="0..n"
+ * policy="dynamic" bind="addLogoutRequestProcessor" unbind="removeLogoutRequestProcessor"
  * @scr.reference name="saml.request.factory"
  * interface="SAMLIdentityRequestFactory" cardinality="0..n"
  * policy="dynamic" bind="addSAMLRequestFactory" unbind="removeSAMLRequestFactory"
@@ -91,6 +95,7 @@ public class IdentitySAMLSSOServiceComponent {
     private static int defaultSingleLogoutRetryCount = 5;
     private static long defaultSingleLogoutRetryInterval = 60000;
     private SPInitSSOAuthnRequestProcessor authnRequestProcessor;
+    private SPInitSLORequestProcessor logoutRequestProcessor;
     private SAMLIdentityRequestFactory samlRequestFactory;
     private static String ssoRedirectPage = null;
 
@@ -228,6 +233,19 @@ public class IdentitySAMLSSOServiceComponent {
             log.debug("Removing SPInitSSOAuthnRequestProcessor ");
         }
         this.authnRequestProcessor = null;
+    }
+
+    protected void addLogoutRequestProcessor(SPInitSLORequestProcessor processor){
+        if (log.isDebugEnabled()) {
+            log.debug("Adding SPInitSLORequestProcessor " + processor.getName());
+        }
+        this.logoutRequestProcessor = processor;
+    }
+    protected void removeLogoutRequestProcessor(SPInitSLORequestProcessor processor){
+        if (log.isDebugEnabled()) {
+            log.debug("Removing SPInitSLORequestProcessor ");
+        }
+        this.logoutRequestProcessor = null;
     }
 
 
