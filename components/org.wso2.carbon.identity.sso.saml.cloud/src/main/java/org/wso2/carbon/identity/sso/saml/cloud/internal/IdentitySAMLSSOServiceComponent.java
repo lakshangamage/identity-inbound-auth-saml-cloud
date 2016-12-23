@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.configs.SalesForceConfigs;
 import org.wso2.carbon.identity.sso.saml.cloud.configs.ZuoraConfigs;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.auth.IDPInitAuthHandler;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.auth.SPInitAuthHandler;
+import org.wso2.carbon.identity.sso.saml.cloud.handler.logout.SPInitLogoutHandler;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.IDPInitSAMLValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SAMLValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SPInitSAMLValidator;
@@ -130,6 +131,10 @@ public class IdentitySAMLSSOServiceComponent {
         SPInitAuthHandler spInitAuthHandler = new SPInitAuthHandler();
         IdentitySAMLSSOServiceComponentHolder.getInstance().getAuthHandlers().add(spInitAuthHandler);
         ctxt.getBundleContext().registerService(AbstractIdentityHandler.class.getName(), spInitAuthHandler, null);
+
+        SPInitLogoutHandler spInitLogoutHandler = new SPInitLogoutHandler();
+        IdentitySAMLSSOServiceComponentHolder.getInstance().getLogoutHandlers().add(spInitLogoutHandler);
+        ctxt.getBundleContext().registerService(AbstractIdentityHandler.class.getName(), spInitLogoutHandler, null);
 
         AmazonConfigs amazon = new AmazonConfigs();
         Hashtable<String, String> amazonProps = new Hashtable<String, String>();

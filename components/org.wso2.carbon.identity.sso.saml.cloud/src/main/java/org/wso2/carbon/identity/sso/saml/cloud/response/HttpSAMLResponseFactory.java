@@ -61,7 +61,9 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
     public HttpIdentityResponse.HttpIdentityResponseBuilder create(IdentityResponse identityResponse) {
 
         if (identityResponse instanceof SAMLLoginResponse) {
-            return sendResponse(identityResponse);
+            return sendLoginResponse(identityResponse);
+        } else if (identityResponse instanceof SAMLLogoutResponse) {
+            return sendLogoutResponse(identityResponse);
         } else {
             return sendNotification(identityResponse);
         }
@@ -75,7 +77,7 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
         return create(identityResponse);
     }
 
-    private HttpIdentityResponse.HttpIdentityResponseBuilder sendResponse(IdentityResponse identityResponse) {
+    private HttpIdentityResponse.HttpIdentityResponseBuilder sendLoginResponse(IdentityResponse identityResponse) {
         SAMLLoginResponse loginResponse = ((SAMLLoginResponse) identityResponse);
         HttpIdentityResponse.HttpIdentityResponseBuilder builder = new HttpIdentityResponse
                 .HttpIdentityResponseBuilder();
@@ -84,9 +86,9 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
         String relayState = loginResponse.getRelayState();
         String acUrl = getACSUrlWithTenantPartitioning(loginResponse.getAcsUrl(), loginResponse.getTenantDomain());
         if (IdentitySAMLSSOServiceComponent.getSsoRedirectHtml() != null) {
-            builder.setBody(getRedirectHtml(acUrl, relayState, authenticatedIdPs, loginResponse));
+            builder.setBody(getRedirectHtml(acUrl, relayState, authenticatedIdPs, loginResponse.getRespString()));
         } else {
-            builder.setBody(getPostHtml(acUrl, relayState, authenticatedIdPs, loginResponse));
+            builder.setBody(getPostHtml(acUrl, relayState, authenticatedIdPs, loginResponse.getRespString()));
         }
         Cookie samlssoSessionIdCookie = loginResponse.getCookies().get(SAMLSSOConstants.SAML_SSO_TOKEN_ID);
         if (samlssoSessionIdCookie != null) {
@@ -96,14 +98,32 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
         return builder;
     }
 
-    private String getRedirectHtml(String acUrl, String relayState, String authenticatedIdPs, SAMLLoginResponse
-            loginResponse) {
+    private HttpIdentityResponse.HttpIdentityResponseBuilder sendLogoutResponse(IdentityResponse identityResponse) {
+        SAMLLogoutResponse logoutResponse = ((SAMLLogoutResponse) identityResponse);
+        HttpIdentityResponse.HttpIdentityResponseBuilder builder = new HttpIdentityResponse
+                .HttpIdentityResponseBuilder();
+
+        String authenticatedIdPs = logoutResponse.getAuthenticatedIdPs();
+        String relayState = logoutResponse.getRelayState();
+        String acUrl = getACSUrlWithTenantPartitioning(logoutResponse.getAcsUrl(), logoutResponse.getTenantDomain());
+        if (IdentitySAMLSSOServiceComponent.getSsoRedirectHtml() != null) {
+            builder.setBody(getRedirectHtml(acUrl, relayState, authenticatedIdPs, logoutResponse.getRespString()));
+        } else {
+            builder.setBody(getPostHtml(acUrl, relayState, authenticatedIdPs, logoutResponse.getRespString()));
+        }
+        builder.setStatusCode(HttpServletResponse.SC_OK);
+        return builder;
+    }
+
+
+    private String getRedirectHtml(String acUrl, String relayState, String authenticatedIdPs, String
+            respString) {
         String finalPage = null;
         String htmlPage = IdentitySAMLSSOServiceComponent.getSsoRedirectHtml();
         String pageWithAcs = htmlPage.replace("$acUrl", acUrl);
         String pageWithAcsResponse = pageWithAcs.replace("<!--$params-->", "<!--$params-->\n" + "<input " +
-                "type='hidden' name='SAMLResponse' value='" + Encode.forHtmlAttribute(loginResponse.getRespString
-                ()) + "'>");
+                "type='hidden' name='SAMLResponse' value='" + Encode.forHtmlAttribute(respString
+                ) + "'>");
         String pageWithAcsResponseRelay = pageWithAcsResponse;
 
         if (relayState != null) {
@@ -125,8 +145,8 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
         return finalPage;
     }
 
-    private String getPostHtml(String acUrl, String relayState, String authenticatedIdPs, SAMLLoginResponse
-            loginResponse) {
+    private String getPostHtml(String acUrl, String relayState, String authenticatedIdPs, String
+            respString) {
         StringBuilder out = new StringBuilder();
         out.append("<html>");
         out.append("<body>");
@@ -134,8 +154,7 @@ public class HttpSAMLResponseFactory extends HttpIdentityResponseFactory {
         out.append(" If the redirection fails, please click the post button.</p>");
         out.append("<form method='post' action='" + Encode.forHtmlAttribute(acUrl) + "'>");
         out.append("<p>");
-        out.append("<input type='hidden' name='SAMLResponse' value='" + Encode.forHtmlAttribute(loginResponse
-                .getRespString()) + "'>");
+        out.append("<input type='hidden' name='SAMLResponse' value='" + Encode.forHtmlAttribute(respString) + "'>");
 
         if (relayState != null) {
             out.append("<input type='hidden' name='RelayState' value='" + Encode.forHtmlAttribute(relayState) +

@@ -7,6 +7,7 @@ import org.wso2.carbon.identity.application.authentication.framework.inbound.Ide
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
+import org.wso2.carbon.identity.sso.saml.cloud.handler.HandlerManager;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdpInitRequest;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
 
@@ -14,8 +15,7 @@ public class SLOLogoutProcessor extends IdentityProcessor {
     @Override
     public IdentityResponse.IdentityResponseBuilder process(IdentityRequest identityRequest) throws FrameworkException {
         SAMLMessageContext messageContext = (SAMLMessageContext) getContextIfAvailable(identityRequest);
-        //TODO implement relevant handler
-        return null;
+        return HandlerManager.getInstance().getResponse(messageContext,identityRequest);
     }
 
     @Override

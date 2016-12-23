@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.context.SAMLMessageContext;
 import org.wso2.carbon.identity.sso.saml.cloud.exception.SAML2Exception;
 import org.wso2.carbon.identity.sso.saml.cloud.exception.SAMLRuntimeException;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.auth.AuthHandler;
+import org.wso2.carbon.identity.sso.saml.cloud.handler.logout.LogoutHandler;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SAMLValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.internal.IdentitySAMLSSOServiceComponentHolder;
 import org.wso2.carbon.identity.sso.saml.cloud.response.SAMLResponse;
@@ -77,5 +78,27 @@ public class HandlerManager {
             }
         }
         throw SAMLRuntimeException.error("Cannot find handler to validate the authentication response");
+    }
+
+    /**
+     * Method to handle framework logout response and get builder.
+     * @param messageContext
+     * @param identityRequest
+     * @return
+     * @throws FrameworkException
+     */
+    public SAMLResponse.SAMLResponseBuilder getResponse(SAMLMessageContext messageContext, IdentityRequest identityRequest) throws FrameworkException {
+        List<LogoutHandler> handlers = IdentitySAMLSSOServiceComponentHolder.getInstance().getLogoutHandlers();
+        Collections.sort(handlers,new HandlerComparator());
+        for(LogoutHandler logoutHandler : handlers) {
+            if(logoutHandler.canHandle(messageContext)){
+                try {
+                    return logoutHandler.validateLogoutResponseFromFramework(messageContext, identityRequest);
+                }catch(IdentityException | IOException e) {
+                    throw new SAML2Exception("Logout Request Validation Failed.", e);
+                }
+            }
+        }
+        throw SAMLRuntimeException.error("Cannot find handler to validate the logout response");
     }
 }

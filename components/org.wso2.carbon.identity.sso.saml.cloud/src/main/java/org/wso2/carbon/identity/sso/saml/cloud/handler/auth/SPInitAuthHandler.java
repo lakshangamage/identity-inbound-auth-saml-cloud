@@ -53,7 +53,9 @@ public class SPInitAuthHandler extends AuthHandler {
     @Override
     public boolean canHandle(SAMLMessageContext messageContext) {
         if (messageContext.getRequest() instanceof SAMLSpInitRequest) {
-            return true;
+            if (messageContext.isAuthnRequest()) {
+                return true;
+            }
         }
         return false;
     }
@@ -222,7 +224,6 @@ public class SPInitAuthHandler extends AuthHandler {
                 return builder;
             }
         }
-        // TODO persist the session
         if (isAuthenticated) {
             builder = new SAMLLoginResponse.SAMLLoginResponseBuilder(messageContext);
             String respString = ((SAMLLoginResponse.SAMLLoginResponseBuilder) builder).buildResponse();

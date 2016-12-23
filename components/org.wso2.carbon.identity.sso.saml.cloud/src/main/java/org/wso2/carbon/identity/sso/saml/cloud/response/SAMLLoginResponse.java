@@ -144,7 +144,6 @@ public class SAMLLoginResponse extends SAMLResponse {
                     + SAMLSSOUtil.getSAMLResponseValidityPeriod() * 60 * 1000L);
             response.setIssueInstant(issueInstant);
 
-            //@TODO sessionHandling
             String sessionId = getSessionId();
             String sessionIndexId = getSessionIndexId(sessionId);
             Assertion assertion = SAMLSSOUtil.buildSAMLAssertion(messageContext, notOnOrAfter, sessionIndexId);

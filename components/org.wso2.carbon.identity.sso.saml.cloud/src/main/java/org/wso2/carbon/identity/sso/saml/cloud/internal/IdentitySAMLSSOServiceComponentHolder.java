@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.sso.saml.cloud.internal;
 
 import org.wso2.carbon.identity.sso.saml.cloud.handler.auth.AuthHandler;
+import org.wso2.carbon.identity.sso.saml.cloud.handler.logout.LogoutHandler;
 import org.wso2.carbon.identity.sso.saml.cloud.handler.validator.SAMLValidator;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class IdentitySAMLSSOServiceComponentHolder {
     public static IdentitySAMLSSOServiceComponentHolder instance = new IdentitySAMLSSOServiceComponentHolder();
     public List<SAMLValidator> samlValidators = new ArrayList<>();
     public List<AuthHandler> authHandlers = new ArrayList<>();
+    public List<LogoutHandler> logoutHandlers = new ArrayList<>();
 
     public static IdentitySAMLSSOServiceComponentHolder getInstance() {
         return instance;
@@ -40,5 +42,9 @@ public class IdentitySAMLSSOServiceComponentHolder {
 
     public List<AuthHandler> getAuthHandlers() {
         return this.authHandlers;
+    }
+
+    public List<LogoutHandler> getLogoutHandlers() {
+        return this.logoutHandlers;
     }
 }

@@ -89,6 +89,7 @@ import org.wso2.carbon.identity.sso.saml.cloud.builders.assertion.DefaultSAMLAss
 import org.wso2.carbon.identity.sso.saml.cloud.builders.encryption.SSOEncrypter;
 import org.wso2.carbon.identity.sso.saml.cloud.builders.signature.SSOSigner;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLIdentityRequest;
+import org.wso2.carbon.identity.sso.saml.cloud.session.SSOSessionPersistenceManager;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SAML2HTTPRedirectSignatureValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.validators.SSOAuthnRequestValidator;
 import org.wso2.carbon.identity.sso.saml.cloud.request.SAMLSpInitRequest;
@@ -473,6 +474,14 @@ public class SAMLSSOUtil {
             issuer = issuer.substring(0, issuer.lastIndexOf(UserCoreConstants.TENANT_DOMAIN_COMBINER));
         }
         return issuer;
+    }
+
+    public static boolean isHttpSuccessStatusCode(int status) {
+        return status >= 200 && status < 300;
+    }
+
+    public static boolean isHttpRedirectStatusCode(int status) {
+        return status == 302 || status == 303;
     }
 
     /**
@@ -1453,5 +1462,11 @@ public class SAMLSSOUtil {
         } else {
             return 5;
         }
+    }
+
+    public static void removeSession(String sessionId, String issuer) {
+        SSOSessionPersistenceManager ssoSessionPersistenceManager = SSOSessionPersistenceManager
+                .getPersistenceManager();
+        ssoSessionPersistenceManager.removeSession(sessionId, issuer);
     }
 }
